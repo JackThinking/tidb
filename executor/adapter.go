@@ -307,7 +307,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (_ sqlexec.RecordSet, err error) {
 			terror.Log(sctx.GetSessionVars().SetSystemVar(variable.TxnIsolation, oriIso))
 		}()
 	}
-
+	// TODO: 将 plan 转换成 executor
 	e, err := a.buildExecutor()
 	if err != nil {
 		return nil, err
@@ -357,6 +357,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (_ sqlexec.RecordSet, err error) {
 	if txn.Valid() {
 		txnStartTS = txn.StartTS()
 	}
+	// TODO: 被封装在一个 recordSet 结构中
 	return &recordSet{
 		executor:   e,
 		stmt:       a,

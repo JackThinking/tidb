@@ -610,6 +610,7 @@ func (cc *clientConn) PeerHost(hasPassword string) (host string, err error) {
 // This function returns and the connection is closed if there is an IO error or there is a panic.
 func (cc *clientConn) Run(ctx context.Context) {
 	const size = 4096
+	// TODO: final语句一般写在函数开头
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -643,6 +644,7 @@ func (cc *clientConn) Run(ctx context.Context) {
 		waitTimeout := cc.getSessionVarsWaitTimeout(ctx)
 		cc.pkt.setReadTimeout(time.Duration(waitTimeout) * time.Second)
 		start := time.Now()
+		// TODO: 读取网络包
 		data, err := cc.readPacket()
 		if err != nil {
 			if terror.ErrorNotEqual(err, io.EOF) {
@@ -669,6 +671,7 @@ func (cc *clientConn) Run(ctx context.Context) {
 		}
 
 		startTime := time.Now()
+		// TODO: 调用 dispatch() 方法处理收到的请求
 		if err = cc.dispatch(ctx, data); err != nil {
 			if terror.ErrorEqual(err, io.EOF) {
 				cc.addMetrics(data[0], startTime, nil)
@@ -802,6 +805,7 @@ func (cc *clientConn) dispatch(ctx context.Context, data []byte) error {
 
 	t := time.Now()
 	cc.lastPacket = data
+	// TODO:command的类型，具体可看MySQL协议
 	cmd := data[0]
 	data = data[1:]
 	token := cc.server.getToken()
@@ -1149,6 +1153,7 @@ func (cc *clientConn) handleLoadStats(ctx context.Context, loadStatsInfo *execut
 // There is a special query `load data` that does not return result, which is handled differently.
 // Query `load stats` does not return result either.
 func (cc *clientConn) handleQuery(ctx context.Context, sql string) (err error) {
+	// TODO: 具体执行逻辑
 	rss, err := cc.ctx.Execute(ctx, sql)
 	if err != nil {
 		metrics.ExecuteErrorCounter.WithLabelValues(metrics.ExecuteErrorToLabel(err)).Inc()
@@ -1163,6 +1168,7 @@ func (cc *clientConn) handleQuery(ctx context.Context, sql string) (err error) {
 	}
 	if rss != nil {
 		if len(rss) == 1 {
+			// TODO: 把结果写回客户端
 			err = cc.writeResultset(ctx, rss[0], false, 0, 0)
 		} else {
 			err = cc.writeMultiResultset(ctx, rss, false)

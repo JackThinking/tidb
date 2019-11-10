@@ -970,6 +970,7 @@ func (s *session) ParseSQL(ctx context.Context, sql, charset, collation string) 
 	}
 	s.parser.SetSQLMode(s.sessionVars.SQLMode)
 	s.parser.EnableWindowFunc(s.sessionVars.EnableWindowFunction)
+	// TODO: 核心解析函数
 	return s.parser.Parse(sql, charset, collation)
 }
 
@@ -1100,6 +1101,7 @@ func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec
 		if err := executor.ResetContextOfStmt(s, stmtNode); err != nil {
 			return nil, err
 		}
+		// TODO: 拿到 AST 之后，就可以做各种验证、变化、优化，这一系列动作的入口在这里
 		stmt, err := compiler.Compile(ctx, stmtNode)
 		if err != nil {
 			s.rollbackOnError(ctx)

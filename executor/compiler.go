@@ -55,10 +55,11 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 	}
 
 	infoSchema := GetInfoSchema(c.Ctx)
+	// TODO: 做一些合法性检查以及名字绑定
 	if err := plannercore.Preprocess(c.Ctx, stmtNode, infoSchema); err != nil {
 		return nil, err
 	}
-
+	// TODO: 制定查询计划，并优化，这个是最核心的步骤之一
 	finalPlan, names, err := planner.Optimize(ctx, c.Ctx, stmtNode, infoSchema)
 	if err != nil {
 		return nil, err
@@ -66,6 +67,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 
 	CountStmtNode(stmtNode, c.Ctx.GetSessionVars().InRestrictedSQL)
 	lowerPriority := needLowerPriority(finalPlan)
+	// TODO: 这个 ExecStmt 结构持有查询计划，是后续执行的基础，非常重要
 	return &ExecStmt{
 		InfoSchema:    infoSchema,
 		Plan:          finalPlan,
