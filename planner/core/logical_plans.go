@@ -298,6 +298,7 @@ type LogicalSelection struct {
 	// Originally the WHERE or ON condition is parsed into a single expression,
 	// but after we converted to CNF(Conjunctive normal form), it can be
 	// split into a list of AND conditions.
+	// TODO: 重要字段，代表了 Where 语句需要计算的表达式
 	Conditions []expression.Expression
 }
 

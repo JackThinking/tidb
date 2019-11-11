@@ -668,6 +668,7 @@ func (b *executorBuilder) buildSet(v *plannercore.Set) Executor {
 	return e
 }
 
+// TODO: plan变成exec
 func (b *executorBuilder) buildInsert(v *plannercore.Insert) Executor {
 	b.startTS = b.ctx.GetSessionVars().TxnCtx.GetForUpdateTS()
 	selectExec := b.build(v.SelectPlan)

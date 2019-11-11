@@ -53,7 +53,9 @@ const (
 	flagJoinReOrder
 )
 
+// TODO: 这些规则并不会考虑数据的分布，直接无脑的操作 Plan 树
 var optRuleList = []logicalOptRule{
+	// TODO: 列裁剪规则，会将不需要的列裁剪掉
 	&columnPruner{},
 	&buildKeySolver{},
 	&decorrelateSolver{},
@@ -116,6 +118,7 @@ func CheckTableLock(ctx sessionctx.Context, is infoschema.InfoSchema, vs []visit
 
 // DoOptimize optimizes a logical plan to a physical plan.
 func DoOptimize(ctx context.Context, flag uint64, logic LogicalPlan) (PhysicalPlan, float64, error) {
+	// TODO: 逻辑优化
 	logic, err := logicalOptimize(ctx, flag, logic)
 	if err != nil {
 		return nil, 0, err
@@ -123,6 +126,7 @@ func DoOptimize(ctx context.Context, flag uint64, logic LogicalPlan) (PhysicalPl
 	if !AllowCartesianProduct.Load() && existsCartesianProduct(logic) {
 		return nil, 0, errors.Trace(ErrCartesianProductUnsupported)
 	}
+	// TODO: 物理优化
 	physical, cost, err := physicalOptimize(logic)
 	if err != nil {
 		return nil, 0, err
@@ -170,7 +174,8 @@ func physicalOptimize(logic LogicalPlan) (PhysicalPlan, float64, error) {
 		TaskTp:      property.RootTaskType,
 		ExpectedCnt: math.MaxFloat64,
 	}
-
+	// TODO: 生成物理算子并且估算其代价，返回值都是一个叫 task 的结构，而不是物理计划，这里引入一个概念，叫 Task
+	//  TiDB 的优化器会将 PhysicalPlan 打包成为 Task。Task 的定义在 task.go 中
 	t, err := logic.findBestTask(prop)
 	if err != nil {
 		return nil, 0, err

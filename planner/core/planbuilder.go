@@ -802,6 +802,7 @@ func (b *PlanBuilder) buildAdmin(ctx context.Context, as *ast.AdminStmt) (Plan, 
 		}
 		ret = p
 		if as.Where != nil {
+			// TODO: 转换成选择语句plan树
 			ret, err = b.buildSelection(ctx, p, as.Where, nil)
 			if err != nil {
 				return nil, err
