@@ -164,10 +164,11 @@ func isLogicalRuleDisabled(r logicalOptRule) bool {
 }
 
 func physicalOptimize(logic LogicalPlan) (PhysicalPlan, float64, error) {
+	// TODO: 递归获取统计信息
 	if _, err := logic.recursiveDeriveStats(); err != nil {
 		return nil, 0, err
 	}
-
+	// TODO: prune prop
 	logic.preparePossibleProperties()
 
 	prop := &property.PhysicalProperty{
