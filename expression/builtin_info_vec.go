@@ -14,6 +14,9 @@
 package expression
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/tidb/types"
@@ -45,11 +48,22 @@ func (b *builtinDatabaseSig) vecEvalString(input *chunk.Chunk, result *chunk.Col
 }
 
 func (b *builtinConnectionIDSig) vectorized() bool {
-	return false
+	return true
 }
 
 func (b *builtinConnectionIDSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	return errors.Errorf("not implemented")
+	n := input.NumRows()
+	data := b.ctx.GetSessionVars()
+	if data == nil {
+		return errors.Errorf("Missing session variable in `builtinConnectionIDSig.vecEvalInt`")
+	}
+	connectionID := int64(data.ConnectionID)
+	result.ResizeInt64(n, false)
+	i64s := result.Int64s()
+	for i := 0; i < n; i++ {
+		i64s[i] = connectionID
+	}
+	return nil
 }
 
 func (b *builtinTiDBVersionSig) vectorized() bool {
@@ -84,27 +98,77 @@ func (b *builtinRowCountSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column
 }
 
 func (b *builtinCurrentUserSig) vectorized() bool {
-	return false
+	return true
 }
 
+// evalString evals a builtinCurrentUserSig.
+// See https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_current-user
 func (b *builtinCurrentUserSig) vecEvalString(input *chunk.Chunk, result *chunk.Column) error {
-	return errors.Errorf("not implemented")
+	n := input.NumRows()
+
+	data := b.ctx.GetSessionVars()
+	result.ReserveString(n)
+	if data == nil || data.User == nil {
+		return errors.Errorf("Missing session variable when eval builtin")
+	}
+	for i := 0; i < n; i++ {
+		result.AppendString(data.User.AuthIdentityString())
+	}
+	return nil
 }
 
 func (b *builtinCurrentRoleSig) vectorized() bool {
-	return false
+	return true
 }
 
+// evalString evals a builtinCurrentUserSig.
+// See https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_current-user
 func (b *builtinCurrentRoleSig) vecEvalString(input *chunk.Chunk, result *chunk.Column) error {
-	return errors.Errorf("not implemented")
+	n := input.NumRows()
+
+	data := b.ctx.GetSessionVars()
+	if data == nil || data.ActiveRoles == nil {
+		return errors.Errorf("Missing session variable when eval builtin")
+	}
+
+	result.ReserveString(n)
+	if len(data.ActiveRoles) == 0 {
+		for i := 0; i < n; i++ {
+			result.AppendString("")
+		}
+		return nil
+	}
+
+	sortedRes := make([]string, 0, 10)
+	for _, r := range data.ActiveRoles {
+		sortedRes = append(sortedRes, r.String())
+	}
+	sort.Strings(sortedRes)
+	res := strings.Join(sortedRes, ",")
+	for i := 0; i < n; i++ {
+		result.AppendString(res)
+	}
+	return nil
 }
 
 func (b *builtinUserSig) vectorized() bool {
-	return false
+	return true
 }
 
+// evalString evals a builtinUserSig.
+// See https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_user
 func (b *builtinUserSig) vecEvalString(input *chunk.Chunk, result *chunk.Column) error {
-	return errors.Errorf("not implemented")
+	n := input.NumRows()
+	data := b.ctx.GetSessionVars()
+	if data == nil || data.User == nil {
+		return errors.Errorf("Missing session variable when eval builtin")
+	}
+
+	result.ReserveString(n)
+	for i := 0; i < n; i++ {
+		result.AppendString(data.User.String())
+	}
+	return nil
 }
 
 func (b *builtinTiDBIsDDLOwnerSig) vectorized() bool {
@@ -127,11 +191,22 @@ func (b *builtinTiDBIsDDLOwnerSig) vecEvalInt(input *chunk.Chunk, result *chunk.
 }
 
 func (b *builtinFoundRowsSig) vectorized() bool {
-	return false
+	return true
 }
 
 func (b *builtinFoundRowsSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	return errors.Errorf("not implemented")
+	data := b.ctx.GetSessionVars()
+	if data == nil {
+		return errors.Errorf("Missing session variable when eval builtin")
+	}
+	lastFoundRows := int64(data.LastFoundRows)
+	n := input.NumRows()
+	result.ResizeInt64(n, false)
+	i64s := result.Int64s()
+	for i := range i64s {
+		i64s[i] = lastFoundRows
+	}
+	return nil
 }
 
 func (b *builtinBenchmarkSig) vectorized() bool {
