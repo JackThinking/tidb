@@ -86,6 +86,7 @@ type ServerVersionInfo struct {
 // globalInfoSyncer stores the global infoSyncer.
 // Use a global variable for simply the code, use the domain.infoSyncer will have circle import problem in some pkg.
 // Use atomic.Value to avoid data race in the test.
+// TODO: 原子变量存储全局info数据
 var globalInfoSyncer atomic.Value
 
 func getGlobalInfoSyncer() (*InfoSyncer, error) {
@@ -93,6 +94,7 @@ func getGlobalInfoSyncer() (*InfoSyncer, error) {
 	if v == nil {
 		return nil, errors.New("infoSyncer is not initialized")
 	}
+	// TODO: 强制类型转换
 	return v.(*InfoSyncer), nil
 }
 
@@ -136,6 +138,7 @@ func GetServerInfo() (*ServerInfo, error) {
 }
 
 // GetServerInfoByID gets specified server static information from etcd.
+// TODO: 相当于public函数，而且是static的，需要调用包内私有函数
 func GetServerInfoByID(ctx context.Context, id string) (*ServerInfo, error) {
 	is, err := getGlobalInfoSyncer()
 	if err != nil {
@@ -144,6 +147,7 @@ func GetServerInfoByID(ctx context.Context, id string) (*ServerInfo, error) {
 	return is.getServerInfoByID(ctx, id)
 }
 
+// TODO: 私有函数，包内使用
 func (is *InfoSyncer) getServerInfoByID(ctx context.Context, id string) (*ServerInfo, error) {
 	if is.etcdCli == nil || id == is.info.ID {
 		return is.info, nil
@@ -162,16 +166,20 @@ func (is *InfoSyncer) getServerInfoByID(ctx context.Context, id string) (*Server
 
 // GetAllServerInfo gets all servers static information from etcd.
 func GetAllServerInfo(ctx context.Context) (map[string]*ServerInfo, error) {
+	// TODO: 先拿到同步器Syncer
 	is, err := getGlobalInfoSyncer()
 	if err != nil {
 		return nil, err
 	}
+	// TODO: 通过Syncer获取所有信息
 	return is.getAllServerInfo(ctx)
 }
 
 func (is *InfoSyncer) getAllServerInfo(ctx context.Context) (map[string]*ServerInfo, error) {
+	// TODO: 用map存server的信息
 	allInfo := make(map[string]*ServerInfo)
 	if is.etcdCli == nil {
+		// TODO: info.id为键
 		allInfo[is.info.ID] = is.info
 		return allInfo, nil
 	}
@@ -305,6 +313,7 @@ func getInfo(ctx context.Context, etcdCli *clientv3.Client, key string, retryCnt
 	allInfo := make(map[string]*ServerInfo)
 	for i := 0; i < retryCnt; i++ {
 		select {
+		// TODO: select是类似与switch的通道操作
 		case <-ctx.Done():
 			err = errors.Trace(ctx.Err())
 			return nil, err
